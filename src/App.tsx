@@ -1,25 +1,21 @@
 import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { Routes, Route } from 'react-router-dom';
+import ProtectedRoute from './components/ProtectedRoute';
+import AuthProvider from './contexts/AuthContext/AuthProvider';
+import AuthForm from './components/AuthForm';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <AuthProvider>
+      <Routes>
+        <Route path={'/'}>
+          <Route index element={<AuthForm />} />
+          <Route path={'chat'} element={<ProtectedRoute />}>
+            <Route index element={<div>wwww</div>} />
+          </Route>
+        </Route>
+      </Routes>
+    </AuthProvider>
   );
 }
 
