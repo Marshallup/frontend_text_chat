@@ -4,8 +4,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 import EmptyLayout from './layouts/EmptyLayout';
 import ChatLayout from './layouts/ChatLayout';
 import AuthProvider from './contexts/AuthContext/AuthProvider';
-import Auth from './pages/Auth';
-import Chat from './pages/Chat';
+import AuthPage from './pages/AuthPage';
+import ChatPage from './pages/ChatPage';
 
 function App() {
   return (
@@ -14,13 +14,13 @@ function App() {
         <Route path={'/'}>
           <Route index element={
             <EmptyLayout>
-              <Auth />
+              <AuthPage />
             </EmptyLayout>
           } />
           <Route path={'chat'} element={<ProtectedRoute />}>
             <Route index element={
               <ChatLayout>
-                <Chat />
+                <ChatPage />
               </ChatLayout>
             } />
           </Route>

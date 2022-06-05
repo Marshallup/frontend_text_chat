@@ -1,4 +1,4 @@
-import ChatSocket from '../socket';
+import ChatSocket from '../ChatSocket';
 import { UserData } from './interfaces';
 
 const api = process.env.REACT_APP_API_HOST;

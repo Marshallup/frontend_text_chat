@@ -1,24 +1,18 @@
 import React, { useState, FC, useContext } from "react";
-import { useNavigate } from "react-router-dom";
 import { login } from "../../services/user/user";
-import ChatSocket from "../../services/socket";
 import { FormDataInterface } from "../../components/AuthForm/interfaces";
-import AuthContext from "../../contexts/AuthContext";
+import { AuthContext } from "../../contexts/AuthContext";
 import AuthForm from "../../components/AuthForm";
 
-const Auth: FC = () => {
-    const navigation = useNavigate();
-    const { setIsLogin } = useContext(AuthContext);
+const AuthPage: FC = () => {
+    const { setIsLogin, setUsername } = useContext(AuthContext);
     const [ loading, setLoading ] = useState(false);
     async function onSubmit(data: FormDataInterface) {
         setLoading(true);
         await login(data)
-            .then(res => {
-                console.log(res, 'res');
-                console.log(ChatSocket, 'socket');
-
+            .then(() => {
+                setUsername(data.username);
                 setIsLogin(true);
-                navigation('/chat');
             })
             .catch(error => {
                 console.log(error, 'error server');
@@ -35,4 +29,4 @@ const Auth: FC = () => {
     )
 }
 
-export default Auth;
+export default AuthPage;

@@ -1,67 +1,85 @@
-import React, { FC, PropsWithChildren } from "react";
+import React, { useState, FC, PropsWithChildren } from "react";
 import {
-    AppBar,
-    Toolbar,
     Typography,
-    IconButton,
-    Drawer,
     Divider,
-    List,
+    IconButton,
 } from "@mui/material";
-import { Menu } from '@mui/icons-material';
-import { LayoutWrapper, Main } from "./styles";
+import { Menu, ChevronLeft } from '@mui/icons-material';
+import {
+    LayoutWrapper,
+    Main,
+    DrawerChat,
+    Spacer,
+    Header,
+    ToolbarChat,
+    IconBtnHeader,
+    IconBtnDrawerWrapper,
+    ChatLayoutContent,
+} from "./styles";
+import { ChatProvider } from "../../contexts/ChatContext";
+import UserList from "../../components/UserList";
 
 const ChatLayout: FC<PropsWithChildren<{}>> = ({ children }) => {
+    const [ isOpen, setIsOpen ] = useState(false);
+
+    function toggleOpen() {
+        setIsOpen(!isOpen);
+    }
+
     return (
-        <LayoutWrapper>
-            <AppBar position="absolute" sx={{ zIndex: 1201 }}>
-                <Toolbar variant="dense">
-                    <IconButton
-                        edge="start"
-                        color="inherit"
-                        aria-label="menu"
-                        sx={{ mr: 2 }}
+        <ChatProvider>
+            <LayoutWrapper>
+                <Header open={isOpen} position="absolute">
+                    <ToolbarChat
+                        variant="dense"
+                        open={isOpen}
                     >
-                        <Menu />
-                    </IconButton>
-                    <Typography
-                        variant="h6" 
-                        color="inherit" 
-                        component="div"
-                    >
-                        Chat
-                    </Typography>
-                </Toolbar>
-            </AppBar>
+                        <IconBtnHeader
+                            edge="start"
+                            color="inherit"
+                            aria-label="menu"
+                            open={isOpen}
+                            onClick={toggleOpen}
+                        >
+                            <Menu />
+                        </IconBtnHeader>
+                        <Typography
+                            variant="h6" 
+                            color="inherit" 
+                            component="div"
+                        >
+                            Chat
+                        </Typography>
+                    </ToolbarChat>
+                </Header>
 
-            <Drawer
-                variant="permanent"
-                open={true}
-                sx={
-                    {
-                        width: '200px',
-                        '& .MuiDrawer-paper': {
-                            position: 'relative',
-                        }
-                    }
-                }
-            >
-                <div>
-                    <IconButton>
-                        icon
-                    </IconButton>
-                    <Divider />
-                    <List>
-                        <div>www</div>
-                    </List>
-                    <Divider />
-                </div>
-            </Drawer>
+                <DrawerChat
+                    variant="permanent"
+                    open={isOpen}
+                >
+                    <div>
+                        <IconBtnDrawerWrapper>
+                            <IconButton onClick={toggleOpen}>
+                                <ChevronLeft />
+                            </IconButton>
+                        </IconBtnDrawerWrapper>
 
-            <Main>
-                { children }
-            </Main>
-        </LayoutWrapper>
+                        <Divider />
+
+                        <UserList />
+
+                        <Divider />
+                    </div>
+                </DrawerChat>
+
+                <Main>
+                    <Spacer />
+                    <ChatLayoutContent>
+                        { children }
+                    </ChatLayoutContent>
+                </Main>
+            </LayoutWrapper>
+        </ChatProvider>
     )
 }
 
