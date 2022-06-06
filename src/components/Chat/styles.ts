@@ -15,4 +15,10 @@ export const ChatBody = styled.div`
     overflow: auto;
     min-height: 100px;
 `;
+export const ShareLink = styled.span`
+    cursor: pointer;
+    color: #1976d2;
+    text-decoration: underline;
+    user-select: none;
+`;
 export const ChatFooter = styled.div``;

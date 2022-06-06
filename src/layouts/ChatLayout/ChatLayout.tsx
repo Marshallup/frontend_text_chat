@@ -1,10 +1,11 @@
-import React, { useState, FC, PropsWithChildren } from "react";
+import React, { useState, FC, PropsWithChildren, useContext } from "react";
 import {
     Typography,
     Divider,
     IconButton,
+    Grid,
 } from "@mui/material";
-import { Menu, ChevronLeft } from '@mui/icons-material';
+import { Menu, ChevronLeft, AccountCircle } from '@mui/icons-material';
 import {
     LayoutWrapper,
     Main,
@@ -17,9 +18,11 @@ import {
     ChatLayoutContent,
 } from "./styles";
 import { ChatProvider } from "../../contexts/ChatContext";
+import { AuthContext } from "../../contexts/AuthContext";
 import UserList from "../../components/UserList";
 
 const ChatLayout: FC<PropsWithChildren<{}>> = ({ children }) => {
+    const { userInfo } = useContext(AuthContext);
     const [ isOpen, setIsOpen ] = useState(false);
 
     function toggleOpen() {
@@ -47,9 +50,16 @@ const ChatLayout: FC<PropsWithChildren<{}>> = ({ children }) => {
                             variant="h6" 
                             color="inherit" 
                             component="div"
+                            sx={{ flexGrow: 1 }}
                         >
-                            Chat
+                            SimpleChat
                         </Typography>
+                        <div>
+                            <Grid display={'flex'}>
+                                <AccountCircle sx={{ marginRight: '10px' }} />
+                                { userInfo.username }
+                            </Grid>
+                        </div>
                     </ToolbarChat>
                 </Header>
 

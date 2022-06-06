@@ -5,7 +5,7 @@ import { Send } from "@mui/icons-material";
 import { InputPanelForm, InputPanelInner, SendBtn } from "./styles";
 import { InputPanelProps, InputPanelData } from "./interface";
 
-const InputPanel: FC<InputPanelProps> = ({ onSubmit }) => {
+const InputPanel: FC<InputPanelProps> = ({ disableSubmit, onSubmit }) => {
     const {
         reset,
         register,
@@ -33,6 +33,7 @@ const InputPanel: FC<InputPanelProps> = ({ onSubmit }) => {
                 <SendBtn
                     type="submit"
                     variant="contained"
+                    disabled={disableSubmit}
                 >
                     <Send />
                 </SendBtn>

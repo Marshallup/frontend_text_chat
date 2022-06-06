@@ -3,8 +3,16 @@ import { ChatContextInterface } from "./interfaces";
 
 const ChatContext = createContext<ChatContextInterface>({
     users: [],
-    curChatID: null,
-    setCurChatID: () => {},
+    currentChat: {
+        chatID: null,
+        username: null,
+        isUserOnline: false,
+    },
+    messages: {},
+    addMessage: () => {},
+    setCurrentChat: () => {},
+    setUserOnline: () => {},
+    updateChatIDOnline: () => {},
     setUsers: () => {},
     addUser: () => {},
     removeUser: () => {},

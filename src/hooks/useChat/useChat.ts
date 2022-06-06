@@ -1,92 +1,82 @@
-import { useCallback, useContext, useEffect, useState } from 'react';
-import uniqid from 'uniqid';
+import { useCallback, useContext, useEffect } from 'react';
 import ChatSocket, { EVENTS } from "../../services/ChatSocket";
 import { AuthContext } from '../../contexts/AuthContext';
 import { ChatContext } from '../../contexts/ChatContext';
-import { ChatMessage } from "../../components/Chat/interface";
-import { MessageSide } from '../../components/Messages/interfaces';
+import { GeneralContext } from '../../contexts/GeneralContext';
 
 function useChat() {
+    const { showNotification } = useContext(GeneralContext);
     const { userInfo, setUserInfo } = useContext(AuthContext);
-    const { curChatID, addUser, removeUser } = useContext(ChatContext);
-    const [ messages, setMessages ] = useState<ChatMessage[]>([]);
+    const {
+        users,
+        currentChat,
+        messages,
+        addUser,
+        removeUser,
+        updateChatIDOnline,
+        addMessage,
+        setUserOnline,
+    } = useContext(ChatContext);
 
-    const addMessage = useCallback((text: string, id: string, type: MessageSide) => {
-        setMessages(prevMessages => {
-            const lastIdxMessages = prevMessages.length - 1;
-
-            console.log(prevMessages[lastIdxMessages]?.clientID, id, 'prevMessages')
-
-            if (prevMessages[lastIdxMessages]?.clientID === id) {
-                return prevMessages.map((prevMessage, idx) => {
-                    if (idx === lastIdxMessages) {
-                        return {
-                            ...prevMessage,
-                            data: [
-                                ...prevMessage.data,
-                                {
-                                    id: uniqid(),
-                                    text,
-                                }
-                            ]
-                        }
-                    }
-
-                    return prevMessage;
-                });
-            }
-
-            return [
-                ...prevMessages,
-                {
-                    messageID: uniqid(),
-                    clientID: id,
-                    data: [
-                        {
-                            id: uniqid(),
-                            text,
-                        }
-                    ],
-                    type,
-                }
-            ];
-        });
-    }, [])
-
-    function sendMyMessage(message: string) {
+    const sendMyMessage = useCallback((message: string) => {
         const socket = ChatSocket.socket;
 
         if (socket) {
-            addMessage(message, socket.id, 'right');
-            socket.emit(EVENTS.SEND_MESSAGE, { id: curChatID, message });
+            addMessage(message, userInfo.username, 'right');
+            socket.emit(EVENTS.SEND_MESSAGE, { id: currentChat.chatID, username: userInfo.username, message });
         }
-    }
+    }, [ addMessage, currentChat, userInfo.username ]);
 
-    const addClientMessage = useCallback((id: string, message: string) => {
-        addMessage(message, id, 'left');
+    const addClientMessage = useCallback((id: string, message: string, getID?: string) => {
+        addMessage(message, id, 'left', getID);
     }, [ addMessage ]);
+
+    useEffect(() => {
+        if (currentChat.chatID) {
+            const currentChatUser = users.find(user => user.username === currentChat.username);
+
+            if (currentChat.isUserOnline) {
+                if (!currentChatUser) {
+                    setUserOnline(false);
+                    showNotification({
+                        autoHide: 3000,
+                        message: `Пользователь ${currentChat.username} - отключился`,
+                        type: 'info',
+                    });
+                }
+            } else {
+                if (currentChatUser) {
+                    updateChatIDOnline(currentChatUser.id);
+                    showNotification({
+                        autoHide: 3000,
+                        message: `Пользователь ${currentChat.username} - онлайн`,
+                        type: 'info',
+                    });
+                }
+            }
+        }
+    }, [ users, currentChat, setUserOnline, updateChatIDOnline, showNotification ]);
 
     useEffect(() => {
         const socket = ChatSocket.socket;
 
         if (socket && !socket.hasListeners(EVENTS.GET_MESSAGE)) {
-            socket.on(EVENTS.GET_MESSAGE, ({ id, message }) => {
-                addClientMessage(id, message);
-                console.log(id, message, 'message get');
+            socket.on(EVENTS.GET_MESSAGE, ({ username, message }) => {
+                addClientMessage(username, message, username);
             });
         }
     }, [ addClientMessage ]);
     useEffect(() => {
         const socket = ChatSocket.socket;
 
-        if (socket && curChatID) {
-            socket.emit(EVENTS.CONNECT_USER, { id: curChatID });
+        if (socket && currentChat.chatID) {
+            socket.emit(EVENTS.CONNECT_USER, { id: currentChat.chatID });
         }
 
         return () => {
             socket?.off(EVENTS.CONNECT_USER);
         }
-    }, [ curChatID ]);
+    }, [ currentChat.chatID ]);
 
     useEffect(() => {
         ChatSocket.initConnection();
@@ -94,19 +84,25 @@ function useChat() {
         const socket = ChatSocket.socket;
 
         if (socket) {
-            socket.once('connect', () => {
+            !socket.hasListeners('connect') && socket.once('connect', () => {
                 socket.emit(EVENTS.ADD_NICKNAME, { username: userInfo.username });
-                addUser(socket.id, userInfo.username);
                 setUserInfo({
                     username: userInfo.username,
                     id: socket.id,
                 });
             });
-            socket.on(EVENTS.ADD_USER, ({ id, username }: { id: string, username: string }) => {
-                console.log(id, username, 'data');
+            !socket.hasListeners(EVENTS.ADD_USER) && socket.on(EVENTS.ADD_USER, ({ id, username }: { id: string, username: string }) => {
                 addUser(id, username);
-            })
-            socket.on(EVENTS.USER_LEAVE, ({ id }: { id: string }) => {
+                showNotification({
+                    autoHide: 3000,
+                    message: `Пользователь ${username} - подключился`,
+                    type: 'info',
+                });
+            });
+            !socket.hasListeners(EVENTS.ADD_USER_INITIAL) && socket.on(EVENTS.ADD_USER_INITIAL, ({ id, username }: { id: string, username: string }) => {
+                addUser(id, username);
+            });
+            !socket.hasListeners(EVENTS.USER_LEAVE) && socket.on(EVENTS.USER_LEAVE, ({ id }: { id: string }) => {
                 removeUser(id);
             });
         }
@@ -115,9 +111,10 @@ function useChat() {
             ChatSocket.socket?.off(EVENTS.ADD_USER);
             ChatSocket.socket?.off(EVENTS.USER_LEAVE);
         };
-    }, [ userInfo.username, addUser, removeUser, setUserInfo ]);
+    }, [ userInfo.username, addUser, removeUser, setUserInfo, showNotification ]);
 
     return {
+        currentChat,
         messages,
         addMessage,
         sendMyMessage,

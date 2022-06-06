@@ -6,12 +6,12 @@ import { Person } from "@mui/icons-material";
 import { UserListEmpty } from './styles';
 
 const UserList = () => {
-    const { users, curChatID, setCurChatID } = useContext(ChatContext);
+    const { users, currentChat, setCurrentChat } = useContext(ChatContext);
     const { userInfo } = useContext(AuthContext);
 
-    function setChat(id: string) {
-        if (curChatID !== id && userInfo.id !== id) {
-            setCurChatID(id);
+    function setChat(id: string, username: string) {
+        if (currentChat.username !== username && userInfo.username !== username) {
+            setCurrentChat(id, username);
         }
     }
 
@@ -19,7 +19,11 @@ const UserList = () => {
         <List component={'nav'}>
             {
                 users.length ? users.map(user => (
-                    <ListItemButton key={user.id} onClick={() => setChat(user.id)}>
+                    <ListItemButton
+                        key={user.id}
+                        selected={user.username === currentChat.username}
+                        onClick={() => setChat(user.id, user.username)}
+                    >
                         <ListItemIcon>
                             <Person />
                         </ListItemIcon>

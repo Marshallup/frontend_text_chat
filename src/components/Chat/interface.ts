@@ -12,6 +12,9 @@ export type ChatMessage = {
 };
 
 export interface ChatProps {
+    isShowChat: boolean,
+    isCurChatOnline: boolean,
     messages: ChatMessage[],
+    onClickShareLink: () => void,
     addMessage: (message: string) => void,
 }
