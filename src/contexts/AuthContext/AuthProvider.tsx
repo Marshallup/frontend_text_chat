@@ -7,9 +7,9 @@ import { AuthContextUserInfo } from "./interfaces";
 const AuthProvider: FC<PropsWithChildren<{}>> = ({ children }) => {
     const location = useLocation();
     const navigate = useNavigate();
-    const [ isLogin, setIsLogin ] = useState(!!process.env.REACT_APP_DEBUG_CHAT);
+    const [ isLogin, setIsLogin ] = useState(process.env.REACT_APP_DEBUG_CHAT === 'true');
     const [ userInfo, setUserInfo ] = useState<AuthContextUserInfo>({
-        username: process.env.REACT_APP_DEBUG_CHAT ? faker.name.middleName() : '',
+        username: process.env.REACT_APP_DEBUG_CHAT === 'true' ? faker.name.middleName() : '',
         id: '',
     });
     const setUsername = useCallback((username: string) => {
