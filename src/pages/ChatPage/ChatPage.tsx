@@ -8,7 +8,7 @@ const ChatPage: FC = () => {
     const { currentChat, messages, sendMyMessage } = useChat();
     const { showNotification } = useContext(GeneralContext);
     const chatMessages = useMemo(() => {
-        const { username } = currentChat;
+        const username = currentChat?.username;
 
         if (username && messages[username]?.length) {
             return messages[username];
@@ -28,8 +28,8 @@ const ChatPage: FC = () => {
 
     return (
         <Chat
-            isShowChat={!!currentChat.chatID}
-            isCurChatOnline={currentChat.isUserOnline}
+            isShowChat={!!currentChat?.id}
+            isCurChatOnline={currentChat?.isOnline as boolean}
             messages={chatMessages}
             addMessage={sendMyMessage}
             onClickShareLink={shareLink}

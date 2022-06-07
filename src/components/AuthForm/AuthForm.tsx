@@ -1,4 +1,4 @@
-import React, { FC, useMemo } from "react";
+import React, { FC, useEffect, useMemo } from "react";
 import { Grid } from "@mui/material";
 import { Typography, TextField, InputAdornment, } from "@mui/material";
 import { CheckCircle, Cancel } from "@mui/icons-material";
@@ -27,20 +27,28 @@ const AuthFormHeader: FC = () => {
     )
 }
 
-const AuthForm: FC<AuthFormProps> = ({ onSubmit, loading }) => {
+const AuthForm: FC<AuthFormProps> = ({ loading, customError, clearCustomError, onSubmit }) => {
     const {
         register,
         handleSubmit,
         control,
+        watch,
         formState: { errors },
     } = useForm<FormDataInterface>({ mode: 'onChange' });
     const { dirtyFields, isSubmitted } = useFormState({ control });
+    const isCustomError = useMemo(() => {
+        return !!customError?.fieldID;
+    }, [ customError ]);
     const inputIcons = useMemo(() => {
         return (dirtyFields.username || isSubmitted) &&
-            (!errors.username ? <CheckCircle /> : <Cancel/>);
-    }, [ dirtyFields.username, errors.username, isSubmitted, ]);
-
+            (!isCustomError && !errors.username ? <CheckCircle /> : <Cancel/>);
+    }, [ isCustomError, dirtyFields.username, errors.username, isSubmitted, ]);
+    const watchUsername = watch('username');
     const onSubmitForm: SubmitHandler<FormDataInterface> = data => onSubmit(data);
+
+    useEffect(() => {
+        clearCustomError();
+    }, [clearCustomError, watchUsername]);
 
     return (
         <GridFullHeight
@@ -60,8 +68,8 @@ const AuthForm: FC<AuthFormProps> = ({ onSubmit, loading }) => {
                                 id="username"
                                 label={'Никнейм'}
                                 fullWidth
-                                error={!!errors.username}
-                                helperText={errors.username?.message}
+                                error={isCustomError || !!errors.username}
+                                helperText={customError?.message || errors.username?.message}
                                 InputProps={{
                                     endAdornment: (
                                         <InputAdornment position={'end'}>
@@ -91,7 +99,7 @@ const AuthForm: FC<AuthFormProps> = ({ onSubmit, loading }) => {
                                 color={'primary'}
                                 variant={'contained'}
                                 type={'submit'}
-                                disabled={!!errors.username}
+                                disabled={isCustomError || !!errors.username}
                                 fullWidth
                                 loading={loading}
                             >

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, FC, PropsWithChildren } from "react";
+import React, { useMemo, useState, useCallback, FC, PropsWithChildren } from "react";
 import uniqid from 'uniqid';
 import { MessageSide } from "../../components/Messages/interfaces";
 import ChatContext from "./ChatContext";
@@ -7,43 +7,90 @@ import {
     ChatContextMessages,
     ChatContextUser,
     GetChatID,
-    CurrentChat,
+    UnreadMessagesOpt,
 } from "./interfaces";
 
 const ChatProvider: FC<PropsWithChildren<{}>> = ({ children }) => {
-    const [ currentChat, setCurrentChat ] = useState<CurrentChat>({
-        chatID: null,
-        username: null,
-        isUserOnline: false,
-    });
     const [ users, setUsers ] = useState<ChatContextUser[]>([]);
+    const currentChat = useMemo(() => {
+        return users.find(user => user.isChat);
+    }, [ users ]);
     const [ messages, setMessages ] = useState<ChatContextMessages>({});
-    const updateCurrentChat = useCallback(
+    const getUserByID = useCallback((id: string) => {
+        return users.find(user => user.id === id);
+    }, [ users ]);
+    const getUserByUsername = useCallback((username: string) => {
+        return users.find(user => user.username === username);
+    }, [ users ]);
+    const setUserUnreadMessages = useCallback(
         (
-            chatID: CurrentChat['chatID'],
-            username: CurrentChat['username'],
-            isUserOnline: boolean = true
+            username: string,
+            { count = 0, inc = false, dec = false }: UnreadMessagesOpt
         ) => {
-            setCurrentChat({
-                chatID,
-                username,
-                isUserOnline,
-            });
+            setUsers(prevState => prevState.map(user => {
+                if (user.username === username) {
+                    let countMessage: number;
+
+                    if (user.isChat && user.unreadMessages === 0) {
+                        return user;
+                    }
+
+                    if (inc) {
+                        countMessage = user.unreadMessages + 1;
+                    } else if (dec && user.unreadMessages > 0) {
+                        countMessage = user.unreadMessages -= 1;
+                    } else if (count >= 0) {
+                        countMessage = count;
+                    } else {
+                        countMessage = user.unreadMessages;
+                    }
+
+                    return {
+                        ...user,
+                        unreadMessages: countMessage
+                    }
+                }
+                return user;
+            }));
         },
         [],
     );
-    const updateChatIDOnline = useCallback((chatID: CurrentChat['chatID'], isUserOnline: boolean = true) => {
-        setCurrentChat(prevValue => ({
-            ...prevValue,
-            chatID,
-            isUserOnline,
+    const setCurrentChat = useCallback((id: string) => {
+        setUsers(prevState => prevState.map(user => {
+            if (user.id === id) {
+                return {
+                    ...user,
+                    isChat: true,
+                }
+            }
+            return {
+                ...user,
+                isChat: false,
+            }
         }))
     }, []);
-    const setUserOnline = useCallback((isUserOnline: boolean) => {
-        setCurrentChat(prevValue => ({
-            ...prevValue,
-            isUserOnline,
-        }))
+    const setChatOnline = useCallback((chatID: ChatContextUser['id'], isUserOnline: ChatContextUser['isOnline'] = true) => {
+        setUsers(prevState => prevState.map(user => {
+            if (user.id === chatID) {
+                return {
+                    ...user,
+                    isOnline: isUserOnline,
+                }
+            }
+            return user;
+        }));
+    }, []);
+    const setUserOnline = useCallback((id: string, isUserOnline: boolean) => {
+        setUsers(prevState => prevState.map(user => {
+            if (user.id === id) {
+                return {
+                    ...user,
+                    isOnline: false,
+                }
+            }
+
+            return user;
+        }));
     }, []);
     const textMessageObject = useCallback((id: string, text: string, type: MessageSide) => ({
         messageID: uniqid(),
@@ -64,7 +111,7 @@ const ChatProvider: FC<PropsWithChildren<{}>> = ({ children }) => {
             getChatID: GetChatID,
         ) => {
             setMessages(prevValue => {
-                const chatID = getChatID || currentChat.username;
+                const chatID = getChatID || currentChat?.username;
 
                 if (chatID) {
                     if (prevValue[chatID]?.length) {
@@ -116,32 +163,43 @@ const ChatProvider: FC<PropsWithChildren<{}>> = ({ children }) => {
                 return prevValue;
             })
         },
-        [ currentChat.username, setMessages, textMessageObject, ],
+        [ currentChat, setMessages, textMessageObject, ],
     );
-    const addUser = useCallback((userID: string, username: string) => {
-        setUsers(prev => {
-            if (prev.find(user => user.username === username)) {
-                return prev.map(userInfo => {
-                    if (userInfo.username === username) {
-                        return {
+    const addUser = useCallback(
+        (userID: string, username: string, unreadMessages: number = 0, isOnline: boolean = true, isChat: boolean = false) => {
+            setUsers(prev => {
+                if (prev.findIndex(user => user.id === userID) < 0) {
+
+                    if (prev.findIndex(user => user.username === username) > -1) {
+                        return prev.map(user => {
+                            if (user.username === username) {
+                                return {
+                                    ...user,
+                                    isOnline: true,
+                                    id: userID,
+                                }
+                            }
+                            return user;
+                        })
+                    }
+    
+                    return [
+                        ...prev,
+                        {
                             id: userID,
                             username,
+                            unreadMessages,
+                            isOnline,
+                            isChat,
                         }
-                    }
+                    ]
+                }
 
-                    return userInfo;
-                });
-            } else {
-                return [
-                    ...prev,
-                    {
-                        id: userID,
-                        username,
-                    }
-                ]
-            }
-        });
-    }, [ setUsers ]);
+                return prev;
+            });
+    
+        }, [ setUsers ]
+    );
     const removeUser = useCallback((userID: string) => {
         setUsers(prev => prev.filter(user => user.id !== userID));
     }, [ setUsers ]);
@@ -155,8 +213,11 @@ const ChatProvider: FC<PropsWithChildren<{}>> = ({ children }) => {
                     messages,
                     addMessage,
                     setUserOnline,
-                    setCurrentChat: updateCurrentChat,
-                    updateChatIDOnline,
+                    getUserByID,
+                    getUserByUsername,
+                    setUserUnreadMessages,
+                    setCurrentChat,
+                    setChatOnline,
                     setUsers,
                     addUser,
                     removeUser,

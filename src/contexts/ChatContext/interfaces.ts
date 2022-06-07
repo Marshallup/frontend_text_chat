@@ -1,10 +1,19 @@
 import { ChatMessage } from "../../components/Chat/interface";
 import { MessageSide } from "../../components/Messages/interfaces";
 
+export type UnreadMessagesOpt = {
+    count?: number,
+    inc?: boolean,
+    dec?: boolean,
+    checkCurrentUser?: boolean,
+}
 export type GetChatID = string | undefined;
 export type ChatContextUser = {
     id: string,
     username: string,
+    unreadMessages: number,
+    isChat: boolean,
+    isOnline: boolean,
 };
 export type AddMessageType = (text: string, id: string, type: MessageSide, getChatID?: GetChatID) => void;
 export type ChatContextMessages = {
@@ -17,14 +26,19 @@ export interface CurrentChat {
 };
 
 export interface ChatContextInterface {
-    currentChat: CurrentChat,
+    currentChat: ChatContextUser | undefined,
     users: ChatContextUser[],
     messages: ChatContextMessages,
     addMessage: AddMessageType,
     setUsers: (users: ChatContextUser[]) => void,
     addUser: (userID: ChatContextUser['id'], username: ChatContextUser['username']) => void,
-    setCurrentChat: (chatID: CurrentChat['chatID'], username: CurrentChat['username'], isUserOnline?: CurrentChat['isUserOnline']) => void,
-    updateChatIDOnline: (chatID: CurrentChat['chatID'], isUserOnline?: CurrentChat['isUserOnline']) => void,
-    setUserOnline: (isUserOnline: boolean) => void,
+    setUserUnreadMessages: (
+        id: string,
+        opt: UnreadMessagesOpt) => void,
+    setCurrentChat: (chatID: string, username: string, isUserOnline?: CurrentChat['isUserOnline']) => void,
+    setChatOnline: (chatID: ChatContextUser['id'], isOnline?: ChatContextUser['isOnline']) => void,
+    setUserOnline: (id: string, isUserOnline: boolean) => void,
+    getUserByID: (id: string) => ChatContextUser | undefined,
+    getUserByUsername: (username: string) => ChatContextUser | undefined,
     removeUser: (userID: string) => void,
 }

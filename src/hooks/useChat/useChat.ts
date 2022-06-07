@@ -5,57 +5,49 @@ import { ChatContext } from '../../contexts/ChatContext';
 import { GeneralContext } from '../../contexts/GeneralContext';
 
 function useChat() {
-    const { showNotification } = useContext(GeneralContext);
     const { userInfo, setUserInfo } = useContext(AuthContext);
     const {
-        users,
         currentChat,
         messages,
         addUser,
-        removeUser,
-        updateChatIDOnline,
+        getUserByUsername,
+        setUserUnreadMessages,
+        setChatOnline,
         addMessage,
-        setUserOnline,
     } = useContext(ChatContext);
 
+    const { showNotification } = useContext(GeneralContext);
     const sendMyMessage = useCallback((message: string) => {
         const socket = ChatSocket.socket;
 
         if (socket) {
             addMessage(message, userInfo.username, 'right');
-            socket.emit(EVENTS.SEND_MESSAGE, { id: currentChat.chatID, username: userInfo.username, message });
+            socket.emit(EVENTS.SEND_MESSAGE, { id: currentChat?.id, username: userInfo.username, message });
         }
     }, [ addMessage, currentChat, userInfo.username ]);
 
     const addClientMessage = useCallback((id: string, message: string, getID?: string) => {
         addMessage(message, id, 'left', getID);
     }, [ addMessage ]);
+    const showNotificationUser = useCallback((username: string, type: 'on' | 'off') => {
+        const currentUser = getUserByUsername(username);
+        let message = `Пользователь ${username}${currentUser?.isChat ? ' (собеседник)' : ''} `;
 
-    useEffect(() => {
-        if (currentChat.chatID) {
-            const currentChatUser = users.find(user => user.username === currentChat.username);
-
-            if (currentChat.isUserOnline) {
-                if (!currentChatUser) {
-                    setUserOnline(false);
-                    showNotification({
-                        autoHide: 3000,
-                        message: `Пользователь ${currentChat.username} - отключился`,
-                        type: 'info',
-                    });
-                }
-            } else {
-                if (currentChatUser) {
-                    updateChatIDOnline(currentChatUser.id);
-                    showNotification({
-                        autoHide: 3000,
-                        message: `Пользователь ${currentChat.username} - онлайн`,
-                        type: 'info',
-                    });
-                }
-            }
+        switch(type) {
+            case 'on':
+                message += 'подключился'
+                break;
+            default:
+                message += 'отключился';
+                break;
         }
-    }, [ users, currentChat, setUserOnline, updateChatIDOnline, showNotification ]);
+
+        showNotification({
+            autoHide: 2000,
+            type: 'info',
+            message,
+        });
+    }, [ showNotification, getUserByUsername ]);
 
     useEffect(() => {
         const socket = ChatSocket.socket;
@@ -63,20 +55,50 @@ function useChat() {
         if (socket && !socket.hasListeners(EVENTS.GET_MESSAGE)) {
             socket.on(EVENTS.GET_MESSAGE, ({ username, message }) => {
                 addClientMessage(username, message, username);
+                setUserUnreadMessages(username, { inc: true });
             });
         }
-    }, [ addClientMessage ]);
+
+        return () => {
+            socket?.off(EVENTS.GET_MESSAGE);
+        }
+    }, [ addClientMessage, setUserUnreadMessages ]);
     useEffect(() => {
         const socket = ChatSocket.socket;
 
-        if (socket && currentChat.chatID) {
-            socket.emit(EVENTS.CONNECT_USER, { id: currentChat.chatID });
+        if (socket && currentChat?.id) {
+            socket.emit(EVENTS.CONNECT_USER, { id: currentChat?.id });
         }
 
         return () => {
             socket?.off(EVENTS.CONNECT_USER);
         }
-    }, [ currentChat.chatID ]);
+    }, [ currentChat ]);
+
+    useEffect(() => {
+        const socket = ChatSocket.socket;
+
+        if (socket) {
+            socket.on(EVENTS.ADD_USER, ({ id, username }: { id: string, username: string }) => {
+                showNotificationUser(username, 'on');
+                addUser(id, username);
+            });
+            socket.on(EVENTS.ADD_USER_INITIAL, ({ id, username }: { id: string, username: string }) => {
+                addUser(id, username);
+            });
+            socket.on(EVENTS.USER_LEAVE, ({ id, username }: { id: string, username: string }) => {
+                showNotificationUser(username, 'off');
+                setChatOnline(id, false);
+            });
+        }
+
+        return () => {
+            ChatSocket.socket?.off(EVENTS.ADD_USER_INITIAL);
+            ChatSocket.socket?.off(EVENTS.ADD_USER);
+            ChatSocket.socket?.off(EVENTS.USER_LEAVE);
+        };
+
+    }, [ addUser, setChatOnline, showNotificationUser ]);
 
     useEffect(() => {
         ChatSocket.initConnection();
@@ -91,27 +113,12 @@ function useChat() {
                     id: socket.id,
                 });
             });
-            !socket.hasListeners(EVENTS.ADD_USER) && socket.on(EVENTS.ADD_USER, ({ id, username }: { id: string, username: string }) => {
-                addUser(id, username);
-                showNotification({
-                    autoHide: 3000,
-                    message: `Пользователь ${username} - подключился`,
-                    type: 'info',
-                });
-            });
-            !socket.hasListeners(EVENTS.ADD_USER_INITIAL) && socket.on(EVENTS.ADD_USER_INITIAL, ({ id, username }: { id: string, username: string }) => {
-                addUser(id, username);
-            });
-            !socket.hasListeners(EVENTS.USER_LEAVE) && socket.on(EVENTS.USER_LEAVE, ({ id }: { id: string }) => {
-                removeUser(id);
-            });
         }
 
         return () => {
-            ChatSocket.socket?.off(EVENTS.ADD_USER);
-            ChatSocket.socket?.off(EVENTS.USER_LEAVE);
+            ChatSocket.socket?.off('connect');
         };
-    }, [ userInfo.username, addUser, removeUser, setUserInfo, showNotification ]);
+    }, [ userInfo.username, addUser, setChatOnline, setUserInfo ]);
 
     return {
         currentChat,
