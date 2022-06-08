@@ -13,9 +13,11 @@ const AuthPage: FC = () => {
     const [ serverError, setServerError ] = useState<ServerError | null>(null);
     const [ loading, setLoading ] = useState(false);
     async function onSubmit(data: FormDataInterface) {
+        const username = data.username.trim();
+
         setLoading(true);
 
-        const currentUser = await getCurrentUserByName(data.username);
+        const currentUser = await getCurrentUserByName(username);
 
         let allData;
 
@@ -25,7 +27,7 @@ const AuthPage: FC = () => {
 
         const success = await login(data)
             .then(async () => {
-                setUsername(data.username);
+                setUsername(username);
                 return true;
             })
             .catch(error => {
