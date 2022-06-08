@@ -16,12 +16,15 @@ import {
     IconBtnHeader,
     IconBtnDrawerWrapper,
     ChatLayoutContent,
+    UserBreak,
 } from "./styles";
 import { AuthContext } from "../../contexts/AuthContext";
+import { ChatContext } from '../../contexts/ChatContext';
 import UserList from "../../components/UserList";
 
 const ChatLayout: FC<PropsWithChildren<{}>> = ({ children }) => {
     const { userInfo } = useContext(AuthContext);
+    const { currentChat } = useContext(ChatContext);
     const [ isOpen, setIsOpen ] = useState(false);
 
     function toggleOpen() {
@@ -54,8 +57,20 @@ const ChatLayout: FC<PropsWithChildren<{}>> = ({ children }) => {
                     </Typography>
                     <div>
                         <Grid display={'flex'}>
-                            <AccountCircle sx={{ marginRight: '10px' }} />
-                            { userInfo.username }
+                            <Grid display={'flex'}>
+                                <AccountCircle sx={{ marginRight: '10px' }} />
+                                { userInfo.username }
+                            </Grid>
+                            {
+                                currentChat && (
+                                    <>
+                                        <UserBreak />
+                                        <Grid>
+                                            { currentChat.username }
+                                        </Grid>
+                                    </>
+                                )
+                            }
                         </Grid>
                     </div>
                 </ToolbarChat>

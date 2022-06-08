@@ -65,3 +65,12 @@ export const DrawerChat = styled(Drawer)<OpenInterface>`
 export const ChatLayoutContent = styled.div`
     height: calc(100% - ${headerHeights.desk});
 `;
+export const UserBreak = styled.span`
+    display: inline-block;
+    margin: 0 5px;
+    
+    &:before {
+        content: '-';
+        display: inline;
+    }
+`;

@@ -24,38 +24,56 @@ const ChatProvider: FC<PropsWithChildren<{}>> = ({ children }) => {
     const getUserByUsername = useCallback((username: string) => {
         return users.find(user => user.username === username);
     }, [ users ]);
+    const saveUserInDB = useCallback((users: ChatContextUser[]) => {
+        setUsersDB(users.map(user => ({
+            ...user,
+            isOnline: false,
+        })));
+    }, [ setUsersDB ]);
     const setUserUnreadMessages = useCallback(
         (
             username: string,
             { count = 0, inc = false, dec = false }: UnreadMessagesOpt
         ) => {
-            setUsers(prevState => prevState.map(user => {
-                if (user.username === username) {
-                    let countMessage: number;
+            setUsers(prevState => {
+                let needSaveDB = false;
 
-                    if (user.isChat && user.unreadMessages === 0) {
-                        return user;
-                    }
+                const userData = prevState.map(user => {
+                    if (user.username === username) {
+                        let countMessage: number;
+    
+                        if (user.isChat && user.unreadMessages === 0) {
+                            return user;
+                        }
+    
+                        if (inc) {
+                            countMessage = user.unreadMessages + 1;
+                        } else if (dec && user.unreadMessages > 0) {
+                            countMessage = user.unreadMessages -= 1;
+                        } else if (count >= 0) {
+                            countMessage = count;
+                        } else {
+                            countMessage = user.unreadMessages;
+                        }
 
-                    if (inc) {
-                        countMessage = user.unreadMessages + 1;
-                    } else if (dec && user.unreadMessages > 0) {
-                        countMessage = user.unreadMessages -= 1;
-                    } else if (count >= 0) {
-                        countMessage = count;
-                    } else {
-                        countMessage = user.unreadMessages;
+                        needSaveDB = true;
+    
+                        return {
+                            ...user,
+                            unreadMessages: countMessage
+                        }
                     }
+                    return user;
+                });
 
-                    return {
-                        ...user,
-                        unreadMessages: countMessage
-                    }
+                if (needSaveDB) {
+                    saveUserInDB(userData);
                 }
-                return user;
-            }));
+
+                return userData;
+            });
         },
-        [],
+        [ saveUserInDB ],
     );
     const setCurrentChat = useCallback((id: string) => {
         setUsers(prevState => prevState.map(user => {
@@ -202,15 +220,12 @@ const ChatProvider: FC<PropsWithChildren<{}>> = ({ children }) => {
                     })
                 }
 
-                setUsersDB(users.map(user => ({
-                    ...user,
-                    isOnline: false,
-                })));
+                saveUserInDB(users);
 
                 return users;
             });
     
-        }, [ setUsers, setUsersDB ]
+        }, [ setUsers, saveUserInDB ]
     );
     const removeUser = useCallback((userID: string) => {
         setUsers(prev => prev.filter(user => user.id !== userID));
