@@ -11,8 +11,8 @@ const ChatContext = createContext<ChatContextInterface>({
     setUserUnreadMessages: () => {},
     getUserByID: () => undefined,
     getUserByUsername: () => undefined,
-    setChatOnline: () => {},
     setUsers: () => {},
+    setMessages: () => {},
     addUser: () => {},
     removeUser: () => {},
 });

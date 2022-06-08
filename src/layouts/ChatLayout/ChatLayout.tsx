@@ -17,7 +17,6 @@ import {
     IconBtnDrawerWrapper,
     ChatLayoutContent,
 } from "./styles";
-import { ChatProvider } from "../../contexts/ChatContext";
 import { AuthContext } from "../../contexts/AuthContext";
 import UserList from "../../components/UserList";
 
@@ -30,66 +29,64 @@ const ChatLayout: FC<PropsWithChildren<{}>> = ({ children }) => {
     }
 
     return (
-        <ChatProvider>
-            <LayoutWrapper>
-                <Header open={isOpen} position="absolute">
-                    <ToolbarChat
-                        variant="dense"
-                        open={isOpen}
-                    >
-                        <IconBtnHeader
-                            edge="start"
-                            color="inherit"
-                            aria-label="menu"
-                            open={isOpen}
-                            onClick={toggleOpen}
-                        >
-                            <Menu />
-                        </IconBtnHeader>
-                        <Typography
-                            variant="h6" 
-                            color="inherit" 
-                            component="div"
-                            sx={{ flexGrow: 1 }}
-                        >
-                            SimpleChat
-                        </Typography>
-                        <div>
-                            <Grid display={'flex'}>
-                                <AccountCircle sx={{ marginRight: '10px' }} />
-                                { userInfo.username }
-                            </Grid>
-                        </div>
-                    </ToolbarChat>
-                </Header>
-
-                <DrawerChat
-                    variant="permanent"
+        <LayoutWrapper>
+            <Header open={isOpen} position="absolute">
+                <ToolbarChat
+                    variant="dense"
                     open={isOpen}
                 >
+                    <IconBtnHeader
+                        edge="start"
+                        color="inherit"
+                        aria-label="menu"
+                        open={isOpen}
+                        onClick={toggleOpen}
+                    >
+                        <Menu />
+                    </IconBtnHeader>
+                    <Typography
+                        variant="h6" 
+                        color="inherit" 
+                        component="div"
+                        sx={{ flexGrow: 1 }}
+                    >
+                        SimpleChat
+                    </Typography>
                     <div>
-                        <IconBtnDrawerWrapper>
-                            <IconButton onClick={toggleOpen}>
-                                <ChevronLeft />
-                            </IconButton>
-                        </IconBtnDrawerWrapper>
-
-                        <Divider />
-
-                        <UserList />
-
-                        <Divider />
+                        <Grid display={'flex'}>
+                            <AccountCircle sx={{ marginRight: '10px' }} />
+                            { userInfo.username }
+                        </Grid>
                     </div>
-                </DrawerChat>
+                </ToolbarChat>
+            </Header>
 
-                <Main>
-                    <Spacer />
-                    <ChatLayoutContent>
-                        { children }
-                    </ChatLayoutContent>
-                </Main>
-            </LayoutWrapper>
-        </ChatProvider>
+            <DrawerChat
+                variant="permanent"
+                open={isOpen}
+            >
+                <div>
+                    <IconBtnDrawerWrapper>
+                        <IconButton onClick={toggleOpen}>
+                            <ChevronLeft />
+                        </IconButton>
+                    </IconBtnDrawerWrapper>
+
+                    <Divider />
+
+                    <UserList />
+
+                    <Divider />
+                </div>
+            </DrawerChat>
+
+            <Main>
+                <Spacer />
+                <ChatLayoutContent>
+                    { children }
+                </ChatLayoutContent>
+            </Main>
+        </LayoutWrapper>
     )
 }
 

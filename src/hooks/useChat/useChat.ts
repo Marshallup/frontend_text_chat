@@ -3,8 +3,11 @@ import ChatSocket, { EVENTS } from "../../services/ChatSocket";
 import { AuthContext } from '../../contexts/AuthContext';
 import { ChatContext } from '../../contexts/ChatContext';
 import { GeneralContext } from '../../contexts/GeneralContext';
+import { useIndexedDBStore } from "use-indexeddb";
+import useDb from '../useDb';
 
 function useChat() {
+    const { setCurrentUser } = useDb();
     const { userInfo, setUserInfo } = useContext(AuthContext);
     const {
         currentChat,
@@ -12,10 +15,10 @@ function useChat() {
         addUser,
         getUserByUsername,
         setUserUnreadMessages,
-        setChatOnline,
+        setUserOnline,
         addMessage,
     } = useContext(ChatContext);
-
+    const dbMethods = useIndexedDBStore('messagesHistory');
     const { showNotification } = useContext(GeneralContext);
     const sendMyMessage = useCallback((message: string) => {
         const socket = ChatSocket.socket;
@@ -84,11 +87,11 @@ function useChat() {
                 addUser(id, username);
             });
             socket.on(EVENTS.ADD_USER_INITIAL, ({ id, username }: { id: string, username: string }) => {
-                addUser(id, username);
+                addUser(id, username, true);
             });
             socket.on(EVENTS.USER_LEAVE, ({ id, username }: { id: string, username: string }) => {
                 showNotificationUser(username, 'off');
-                setChatOnline(id, false);
+                setUserOnline(id, false);
             });
         }
 
@@ -98,27 +101,29 @@ function useChat() {
             ChatSocket.socket?.off(EVENTS.USER_LEAVE);
         };
 
-    }, [ addUser, setChatOnline, showNotificationUser ]);
+    }, [ dbMethods, addUser, setUserOnline, showNotificationUser ]);
 
     useEffect(() => {
-        ChatSocket.initConnection();
-
         const socket = ChatSocket.socket;
 
         if (socket) {
-            !socket.hasListeners('connect') && socket.once('connect', () => {
-                socket.emit(EVENTS.ADD_NICKNAME, { username: userInfo.username });
-                setUserInfo({
+            socket.once('connect', () => {
+                const userInfoSaved = {
                     username: userInfo.username,
                     id: socket.id,
-                });
+                }
+                socket.emit(EVENTS.ADD_NICKNAME, { username: userInfo.username });
+                setUserInfo(userInfoSaved);
+                setCurrentUser(userInfoSaved);
             });
         }
+
+        ChatSocket.initConnection();
 
         return () => {
             ChatSocket.socket?.off('connect');
         };
-    }, [ userInfo.username, addUser, setChatOnline, setUserInfo ]);
+    }, [ userInfo.username, setUserInfo, setCurrentUser ]);
 
     return {
         currentChat,

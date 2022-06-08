@@ -8,28 +8,31 @@ import { DbProvider } from './contexts/DbContext';
 import AuthPage from './pages/AuthPage';
 import ChatPage from './pages/ChatPage';
 import { GeneralProvider } from './contexts/GeneralContext';
+import { ChatProvider } from './contexts/ChatContext';
 
 function App() {
   return (
     <DbProvider>
       <GeneralProvider>
         <AuthProvider>
-          <Routes>
-            <Route path={'/'}>
-              <Route index element={
-                <EmptyLayout>
-                  <AuthPage />
-                </EmptyLayout>
-              } />
-              <Route path={'chat'} element={<ProtectedRoute />}>
+          <ChatProvider>
+            <Routes>
+              <Route path={'/'}>
                 <Route index element={
-                  <ChatLayout>
-                    <ChatPage />
-                  </ChatLayout>
+                  <EmptyLayout>
+                    <AuthPage />
+                  </EmptyLayout>
                 } />
+                <Route path={'chat'} element={<ProtectedRoute />}>
+                  <Route index element={
+                    <ChatLayout>
+                      <ChatPage />
+                    </ChatLayout>
+                  } />
+                </Route>
               </Route>
-            </Route>
-          </Routes>
+            </Routes>
+          </ChatProvider>
         </AuthProvider>
       </GeneralProvider>
     </DbProvider>

@@ -6,11 +6,24 @@ const idbConfig = {
     version: 1,
     stores: [
       {
+        name: "currentUser",
+        id: { keyPath: "id", autoIncrement: true },
+        indices: [
+            { name: 'currentUser', keyPath: 'currentUser' },
+        ],
+      },
+      {
         name: "messages",
         id: { keyPath: "id", autoIncrement: true },
         indices: [
-            { name: 'clientID', keyPath: 'clientID', options: { unique: false } },
             { name: 'messages', keyPath: 'messages' },
+        ],
+      },
+      {
+        name: "users",
+        id: { keyPath: "id", autoIncrement: true },
+        indices: [
+            { name: 'users', keyPath: 'users' },
         ],
       },
     ],

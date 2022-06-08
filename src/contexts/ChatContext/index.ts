@@ -5,3 +5,4 @@ export {
     ChatContext,
     ChatProvider,
 }
+export * from './interfaces';
