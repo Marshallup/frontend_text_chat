@@ -25,7 +25,7 @@ const AuthPage: FC = () => {
             allData = await getAllDataByCurrentUserID(currentUser.id);
         }
 
-        const success = await login(data)
+        const success = await login({ username, })
             .then(async () => {
                 setUsername(username);
                 return true;
